@@ -1,38 +1,33 @@
-const express = require('express')
-const exphbs = require('express-handlebars')
-const session = require('express-session')
-const FileStore = require('session-file-store')(session)
-const flash = require('express-flash')
+const express = require("express");
+const exphbs = require("express-handlebars");
+const session = require("express-session");
+const FileStore = require("session-file-store")(session);
+const flash = require("express-flash");
 
-const app = express()
+const app = express();
 
-const conn = require('./db/conn')
+const conn = require("./db/conn");
 
 // Models
-const Tought = require('./models/Tought')
-const User = require('./models/User')
+const Tought = require("./models/Tought");
 
-// Import Routes
-const toughtsRoutes = require('./routes/toughtsRoutes')
-const authRoutes = require('./routes/authRoutes')
+// routes
+const toughtsRoutes = require("./routes/toughtsRoutes");
+const authRoutes = require("./routes/authRoutes");
+const ToughController = require("./controllers/ToughtController");
 
-// Import Controller
-const ToughtController = require('./controllers/ToughtsController')
+app.engine("handlebars", exphbs.engine());
+app.set("view engine", "handlebars");
 
-// template engine
-app.engine('handlebars', exphbs.engine())
-app.set('view engine', 'handlebars')
-
-// receber resposta do body
 app.use(
   express.urlencoded({
-    extended: true
+    extended: true,
   })
-)
+);
 
-app.use(express.json())
+app.use(express.json());
 
-// session middleware
+//session middleware
 app.use(
   session({
     name: 'session',
@@ -41,42 +36,43 @@ app.use(
     saveUninitialized: false,
     store: new FileStore({
       logFn: function () {},
-      path: require('path').join(require('os').tmpdir(), 'sessions')
+      path: require('path').join(require('os').tmpdir(), 'sessions'),
     }),
     cookie: {
       secure: false,
-      maxAge: 360000,
-      expires: new Date(Date.now() + 360000),
-      httpOnly: true
-    }
-  })
+      maxAge: 3600000,
+      expires: new Date(Date.now() + 3600000),
+      httpOnly: true,
+    },
+  }),
 )
 
 // flash messages
-app.use(flash())
+app.use(flash());
 
-// public path
-app.use(express.static('public'))
+app.use(express.static("public"));
 
 // set session to res
 app.use((req, res, next) => {
+  // console.log(req.session)
+  console.log(req.session.userid);
 
   if (req.session.userid) {
-    res.locals.sessions = req.session
+    res.locals.session = req.session;
   }
 
-  next()
-})
+  next();
+});
 
-// Routes
-app.use('/toughts', toughtsRoutes)
-app.use('/', authRoutes)
+app.use("/toughts", toughtsRoutes);
+app.use("/", authRoutes);
 
-app.get('/', ToughtController.showToughts)
-
+app.get("/", ToughController.showToughts);
 
 conn
-  // .sync({ force: true})
+  // .sync({
+  //   force: true
+  // })
   .sync()
   .then(() => {
     app.listen(3000)
